@@ -1,26 +1,16 @@
 name: Publish to PowerShell Gallery
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   publish:
     runs-on: windows-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4 # تم التحديث إلى الإصدار 4
-
-      - name: Verify API Key Secret
-        shell: pwsh
-        run: |
-          if (-not $env:PSGALLERY_API_KEY) {
-            Write-Error "PSGALLERY_API_KEY secret is not set!"
-            exit 1
-          }
-          Write-Host "API Key secret is present."
-        env:
-          PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+        uses: actions/checkout@v4
 
       - name: Publish Module to PowerShell Gallery
         shell: pwsh
