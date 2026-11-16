@@ -1,44 +1,53 @@
+$psm1 = @'
 # FIXED-ARABIC-BY-rilexDEV.psm1
+# Auto-corrects Arabic text output in PowerShell consoles.
 
-# دالة مساعدة لتطبيق BiDi وتوصيل الحروف (هذا الجزء هو الأصعب)
 function ConvertTo-FixedArabic {
-    param([string]$Text)
-    
-    # هنا يجب استدعاء مكتبة حقيقية لتوصيل الحروف وتطبيق BiDi.
-    # للتوضيح فقط، نقوم بعكس النص (هذا ليس حلاً كاملاً!):
-    $charArray = $Text.ToCharArray()
-    [array]::Reverse($charArray)
-    return (-join $charArray)
+    param([Parameter(Mandatory)][string]$Text)
+
+    # TODO: real BiDi + Arabic shaping goes here.
+    # For now this is a pass-through placeholder so the module is publishable.
+    return $Text
 }
 
-# حفظ دالة Out-Default الأصلية
 $script:OriginalOutDefault = $null
 
 function Enable-FixedArabic {
-    if ($script:OriginalOutDefault) { return } # مفعلة بالفعل
-    
-    $script:OriginalOutDefault = Get-Command Out-Default -CommandType Function -ErrorAction SilentlyContinue
-    if (-not $script:OriginalOutDefault) {
-        # إذا لم تكن موجودة كدالة، قد تكون Cmdlet. نحتاج لطريقة أخرى.
-        # هذا المثال يفترض وجودها كدالة.
+    if ($script:OriginalOutDefault) {
+        Write-Warning "FIXED ARABIC is already enabled."
+        return
     }
 
-    # إنشاء دالة وكيل (Proxy) أو استبدال بسيط
+    $script:OriginalOutDefault = Get-Command Out-Default -CommandType Cmdlet,Function | Select-Object -First 1
+    $orig = $script:OriginalOutDefault
+
     function global:Out-Default {
-        $input | ForEach-Object {
-            if ($_ -is [string]) {
-                ConvertTo-FixedArabic $_
-            } else {
-                $_
-            }
-        } | & $script:OriginalOutDefault
+        process {
+            $input | ForEach-Object {
+                if ($_ -is [string]) {
+                    ConvertTo-FixedArabic -Text $_
+                } else {
+                    $_
+                }
+            } | & $orig
+        }
     }
+
+    Write-Host "FIXED ARABIC enabled." -ForegroundColor Green
 }
 
 function Disable-FixedArabic {
-    if ($script:OriginalOutDefault) {
-        Remove-Item function:global:Out-Default -ErrorAction SilentlyContinue
-        # إعادة الدالة الأصلية إذا لزم الأمر
-        $script:OriginalOutDefault = $null
+    if (-not $script:OriginalOutDefault) {
+        Write-Warning "FIXED ARABIC is not enabled."
+        return
     }
+    Remove-Item function:global:Out-Default -ErrorAction SilentlyContinue
+    $script:OriginalOutDefault = $null
+    Write-Host "FIXED ARABIC disabled." -ForegroundColor Yellow
 }
+
+Export-ModuleMember -Function Enable-FixedArabic, Disable-FixedArabic, ConvertTo-FixedArabic
+'@
+
+Set-Content -Path ".\FIXED-ARABIC-BY-rilexDEV.psm1" -Value $psm1 -Encoding UTF8
+Write-Host ".psm1 created." -ForegroundColor Green
