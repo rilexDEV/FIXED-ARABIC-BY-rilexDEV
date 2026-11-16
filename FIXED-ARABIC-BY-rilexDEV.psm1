@@ -12,22 +12,20 @@ public class ArabicFixer
 }
 "@
 
-function ConvertTo-FixedArabic {
-    param([Parameter(Mandatory)][string]$Text)
-    return [ArabicFixer]::Fix($Text)
-}
-
 $script:IsEnabled = $false
 $script:OrigOutDefault = $null
 
 function Enable-FixedArabic {
     if ($script:IsEnabled) { Write-Warning "Already enabled."; return }
     $script:IsEnabled = $true
-    $script:OrigOutDefault = Get-Command -Name Out-Default -CommandType Cmdlet
+    $script:OrigOutDefault = Get-Command -Name Microsoft.PowerShell.Core\Out-Default -CommandType Cmdlet
 
     function global:Out-Default {
         [CmdletBinding()]
-        param([Parameter(ValueFromPipeline=$true)]$InputObject)
+        param(
+            [Parameter(ValueFromPipeline = $true)]
+            $InputObject
+        )
         process {
             if ($InputObject -is [string]) {
                 [ArabicFixer]::Fix($InputObject)
@@ -46,4 +44,4 @@ function Disable-FixedArabic {
     Write-Host "FIXED ARABIC disabled." -ForegroundColor Yellow
 }
 
-Export-ModuleMember -Function Enable-FixedArabic, Disable-FixedArabic, ConvertTo-FixedArabic
+Export-ModuleMember -Function Enable-FixedArabic, Disable-FixedArabic
