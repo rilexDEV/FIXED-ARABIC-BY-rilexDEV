@@ -8,9 +8,23 @@ jobs:
   publish:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
-      
-      - name: Publish Module
+      - name: Checkout code
+        uses: actions/checkout@v4 # تم التحديث إلى الإصدار 4
+
+      - name: Verify API Key Secret
         shell: pwsh
         run: |
-          Publish-Module -Path . -NuGetApiKey ${{ secrets.PSGALLERY_API_KEY }}
+          if (-not $env:PSGALLERY_API_KEY) {
+            Write-Error "PSGALLERY_API_KEY secret is not set!"
+            exit 1
+          }
+          Write-Host "API Key secret is present."
+        env:
+          PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+
+      - name: Publish Module to PowerShell Gallery
+        shell: pwsh
+        run: |
+          Publish-Module -Path . -NuGetApiKey $env:PSGALLERY_API_KEY -Verbose
+        env:
+          PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
