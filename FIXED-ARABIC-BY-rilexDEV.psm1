@@ -18,21 +18,22 @@ $script:OrigOutDefault = $null
 function Enable-FixedArabic {
     if ($script:IsEnabled) { Write-Warning "Already enabled."; return }
     $script:IsEnabled = $true
-    $script:OrigOutDefault = Get-Command -Name Microsoft.PowerShell.Core\Out-Default -CommandType Cmdlet
+    
+    if (-not $script:OrigOutDefault) {
+        $script:OrigOutDefault = Get-Command -Name Microsoft.PowerShell.Core\Out-Default -CommandType Cmdlet
+    }
+    $orig = $script:OrigOutDefault
 
     function global:Out-Default {
         [CmdletBinding()]
-        param(
-            [Parameter(ValueFromPipeline = $true)]
-            $InputObject
-        )
+        param([Parameter(ValueFromPipeline = $true)]$InputObject)
         process {
             if ($InputObject -is [string]) {
-                [ArabicFixer]::Fix($InputObject)
+                [ArabicFixer]::Fix($InputObject) | & $orig
             } else {
-                $InputObject
+                $InputObject | & $orig
             }
-        } | & $script:OrigOutDefault
+        }
     }
     Write-Host "FIXED ARABIC enabled successfully." -ForegroundColor Green
 }
